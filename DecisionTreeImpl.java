@@ -46,6 +46,7 @@ public class DecisionTreeImpl {
         Double best_gain = -1;
         String best_attr = "";
         Double best_thresh = -1;
+
         for (int i = 0; i < dataSet.get(0).size; i++) {
             //Creates a comparator allowing me to sort the dataSet by the ith attribute of each entry
             Comparator<ArrayList<Double>> myComparator = new Comparator<ArrayList<Double>>() {
@@ -81,7 +82,7 @@ public class DecisionTreeImpl {
                 }
             }
         }
-        this.root.attribute = best_attr;
+        this.attribute = best_attr;
         //Split the dataSet at the threshhold
         ArrayList<ArrayList<Double>> left_data = new ArrayList();
         ArrayList<ArrayList<Double>> right_data = new ArrayList();
@@ -91,9 +92,13 @@ public class DecisionTreeImpl {
             else
                 right_data.add(instance);
         }
+        //Set the fields of the node
+        this.threshold = best_thresh;
+        this.attribute = best_attr;
+
         //Recursively build subtrees
-        this.root.left = buildTree(left_data);
-        this.root.right = buildTree(right_data);
+        DecTreeNode left = buildTree(left_data);
+        DecTreeNode right = buildTree(right_data);
     }
 
     private Double infoGain(Double thresh) {
@@ -103,12 +108,18 @@ public class DecisionTreeImpl {
         return gain;
     }
 
-    private ArrayList<ArrayList<Double>> split(ArrayList<ArrayList<Double>> dataSet) {
-
-    }
 
     public int classify(List<Double> instance) {
         // TODO: add code here
+        DecTreeNode current = this.root;
+        while (!current.isLeaf()) {
+            int attr = instance.get(mTrainAttributes.indexOf(current.attribute));
+            if (attr <= current.thresh && current.left != null)
+                current = current.left;
+            else if (current.right != null)
+                current = current.right;
+        }
+        return current.classLabel;
     }
 
     public void rootInfoGain(ArrayList<ArrayList<Double>> dataSet, ArrayList<String> trainAttributeNames, int minLeafNumber) {
@@ -116,7 +127,6 @@ public class DecisionTreeImpl {
         this.mTrainDataSet = dataSet;
         this.minLeafNumber = minLeafNumber;
         // TODO: add code here
-
 
         //TODO: modify this example print statement to work with your code to output attribute names and info gain. Note the %.6f output format.
         for (int i = 0; i < bestSplitPointList.length; i++) {
