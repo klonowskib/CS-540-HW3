@@ -48,7 +48,7 @@ public class HW3 {
 		DecisionTreeImpl mTree = new DecisionTreeImpl(mTrainDataSet, mTrainAttributeNames, Integer.parseInt(args[3]));
 
 		if (mode == 0) {
-			mTree.print();
+			mTree.rootInfoGain(mTestDataSet, mTrainAttributeNames, Integer.parseInt(args[3]));
 		}else if(mode == 1){
 			mTree.print();
 		}else if(mode == 2){
