@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+
 public class HW3 {
 
 	/**
@@ -41,12 +42,13 @@ public class HW3 {
 		mHashMap = createDataSet(args[2]);
 		mTestDataSet = (ArrayList<ArrayList<Double>>)mHashMap.get("mDataSet");
 		mTestAttributeNames = (ArrayList<String>)mHashMap.get("mAttributeNames");
-		
+		System.out.println(mHashMap.get("mAttributeNames"));
+		System.out.println(args[3]);
 		//Build tree.
 		DecisionTreeImpl mTree = new DecisionTreeImpl(mTrainDataSet, mTrainAttributeNames, Integer.parseInt(args[3]));
-		
+
 		if (mode == 0) {
-			//TODO: add code here.
+			mTree.print();
 		}else if(mode == 1){
 			mTree.print();
 		}else if(mode == 2){

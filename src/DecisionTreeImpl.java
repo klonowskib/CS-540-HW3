@@ -20,6 +20,7 @@ public class DecisionTreeImpl {
     private ArrayList<ArrayList<Double>> mTrainDataSet;
     //Min number of instances per leaf.
     private int minLeafNumber = 10;
+    private Double[][] bestSplitPointList = new Double[20][1];
 
     /**
      * Answers static questions about decision trees.
@@ -31,8 +32,8 @@ public class DecisionTreeImpl {
     /**
      * Build a decision tree given a training set then prune it using a tuning set.
      *
-     * @param train: the training set
-     * @param tune:  the tuning set
+     * //@param train: the training set
+     * //@param tune:  the tuning set
      */
     DecisionTreeImpl(ArrayList<ArrayList<Double>> trainDataSet, ArrayList<String> trainAttributeNames, int minLeafNumber) {
         this.mTrainAttributes = trainAttributeNames;
@@ -88,26 +89,46 @@ public class DecisionTreeImpl {
                     int current_class = current.get(current.size() - 1).intValue();
                     if (current_class != last) {
                         thresh = current.get(i);
+
                         pot_threshs.add(thresh);
                     }
                     last = current_class;
                 }
 
-                int gain = 0;
+                double gain = 0;
+                int left_size = 0;
+                int right_size = 0;
+                double bestAttrSplit = 0;
                 for(double curr_t : pot_threshs) {
-                    
+                    for(ArrayList<Double> instance : dataSet) {
+                        if(instance.get(i) <= curr_t)
+                            left_size++;
+                        else
+                            right_size++;
+                    }
+                    gain = infoGain(left_size, right_size);
+                    if(gain >= best_gain) {
+                        best_gain = gain;
+                        best_attr = mTrainAttributes.get(i);
+                        best_thresh = curr_t;
+                    }
+                    if(gain >= bestAttrSplit) {
+                        bestAttrSplit = gain;
+                    }
                 }
+                //bestSplitPointList[i] = bestAttrSplit;
+
+                /*
                 for (DataBinder binder : databinds) {
                     sorted.add(sorted.size() - 1, binder.getData());
                 }
+                */
+
             }
         }
         return new DecTreeNode(-1, null, -1);
     }
 
-    private void split(double threshold, ArrayList<ArrayList<Double>> dataSet) {
-
-    }
     private Double infoGain(int left_size, int right_size) {
         return (Math.log(left_size) / Math.log(2)) + (Math.log(right_size) / Math.log(2));
     }
@@ -167,7 +188,7 @@ public class DecisionTreeImpl {
     }
 
     public Double printAccuracy(int numEqual, int numTotal) {
-        Double accuracy = numEqual / (Double) numTotal;
+        Double accuracy = numEqual /(double) numTotal;
         System.out.println(accuracy);
         return accuracy;
     }
