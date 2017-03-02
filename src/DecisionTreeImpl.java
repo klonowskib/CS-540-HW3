@@ -60,30 +60,53 @@ public class DecisionTreeImpl {
         } else {
             //Sort by attribute
             ArrayList<DataBinder> databinds = new ArrayList<DataBinder>();
-            ArrayList<ArrayList<Double>> sorted = new ArrayList<ArrayList<Double>>();
-            Comparator<DataBinder> myComparator = new Comparator<DataBinder>() {
-                @Override
-                public int compare(DataBinder t1, DataBinder t2) {
-                    Double t1_class = t1.getData().get(t1.getData().size() - 1);
-                    Double t2_class = t2.getData().get(t2.getData().size() - 1);
-                    if (t1.getArgItem() == t2.getArgItem())
-                        return t1_class.compareTo(t2_class);
-                    else
-                        return t1.getArgItem().compareTo(t2.getArgItem());
+            for (ArrayList<Double> example : dataSet) {
+                for (int i = 0; i < example.size(); i++) {
+                    databinds.add(new DataBinder(i, example));
                 }
-            };
-            Collections.sort(databinds, myComparator);
-
-            for(DataBinder instance : databinds) {
-                    
             }
-            for(DataBinder binder: databinds) {
-                sorted.add(sorted.size()-1, binder.getData());
+            ArrayList<ArrayList<Double>> sorted = new ArrayList<ArrayList<Double>>();
+            for (int i = 0; i < mTrainAttributes.size(); i++) {
+                Comparator<DataBinder> myComparator = new Comparator<DataBinder>() {
+                    @Override
+                    public int compare(DataBinder t1, DataBinder t2) {
+                        Double t1_class = t1.getData().get(t1.getData().size() - 1);
+                        Double t2_class = t2.getData().get(t2.getData().size() - 1);
+                        if (t1.getArgItem() == t2.getArgItem())
+                            return t1_class.compareTo(t2_class);
+                        else
+                            return t1.getArgItem().compareTo(t2.getArgItem());
+                    }
+                };
+                Collections.sort(databinds, myComparator);
+
+                last = -1;
+                ArrayList<Double> pot_threshs = new ArrayList<Double>();
+                double thresh;
+                for (DataBinder instance : databinds) {
+                    ArrayList<Double> current = instance.getData();
+                    int current_class = current.get(current.size() - 1).intValue();
+                    if (current_class != last) {
+                        thresh = current.get(i);
+                        pot_threshs.add(thresh);
+                    }
+                    last = current_class;
+                }
+
+                for(double curr_t : pot_threshs){
+
+                }
+                for (DataBinder binder : databinds) {
+                    sorted.add(sorted.size() - 1, binder.getData());
+                }
             }
         }
         return new DecTreeNode(-1, null, -1);
     }
 
+    private void split(double threshold, ArrayList<ArrayList<Double>> dataSet) {
+
+    }
     private Double infoGain(int left_size, int right_size) {
         return (Math.log(left_size) / Math.log(2)) + (Math.log(right_size) / Math.log(2));
     }
@@ -91,8 +114,8 @@ public class DecisionTreeImpl {
     public int classify(List<Double> instance) {
         DecTreeNode current = this.root;
         while (!current.isLeaf()) {
-            int attr = instance.get(mTrainAttributes.indexOf(current.attribute));
-            if (attr <= current.thresh && current.left != null)
+            int attr = instance.get(mTrainAttributes.indexOf(current.attribute)).intValue();
+            if (attr <= current.threshold && current.left != null)
                 current = current.left;
             else if (current.right != null)
                 current = current.right;
