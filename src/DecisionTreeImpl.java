@@ -1,7 +1,7 @@
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Fill in the implementation details of the class DecisionTree using this file. Any methods or
@@ -43,84 +43,49 @@ public class DecisionTreeImpl {
 
     private DecTreeNode buildTree(ArrayList<ArrayList<Double>> dataSet) {
         // TODO: add code here
-        Double best_gain = -1;
+        double best_thresh = -1;
+        double best_gain = -1;
         String best_attr = "";
-        Double best_thresh = -1;
-
-        for (int i = 0; i < dataSet.get(0).size; i++) {
-            //Creates a comparator allowing me to sort the dataSet by the ith attribute of each entry
-            Comparator<ArrayList<Double>> myComparator = new Comparator<ArrayList<Double>>() {
-                //private ArrayList one;
+        //Check if all classes match
+        boolean classified = true;
+        int last = -1;
+        for (ArrayList<Double> inst : dataSet) {
+            if (inst.get(inst.size() - 1) == last || last == -1) {
+                last = inst.get(inst.size() - 1).intValue();
+            } else
+                classified = false;
+        }
+        if (classified) {
+            return new DecTreeNode(last, null, -1);
+        } else {
+            //Sort by attribute
+            ArrayList<DataBinder> databinds = new ArrayList<DataBinder>();
+            ArrayList<ArrayList<Double>> sorted = new ArrayList<ArrayList<Double>>();
+            Comparator<DataBinder> myComparator = new Comparator<DataBinder>() {
                 @Override
-                public int compare(ArrayList<Double> one, ArrayList<Double> two) {
-                    if (one.get(i) == two.get(i))
-                        return one.get(one.size - 1).compareTo(two.get(two.get(two.size - 1)));
+                public int compare(DataBinder t1, DataBinder t2) {
+                    Double t1_class = t1.getData().get(t1.getData().size() - 1);
+                    Double t2_class = t2.getData().get(t2.getData().size() - 1);
+                    if (t1.getArgItem() == t2.getArgItem())
+                        return t1_class.compareTo(t2_class);
                     else
-                        return one.get(i).compareTo(two.get(i));
+                        return t1.getArgItem().compareTo(t2.getArgItem());
                 }
             };
+            Collections.sort(databinds, myComparator);
 
-            DataBinder data_binder = new DataBinder(i, dataSet.get(0));
-            //sorting the dataSet using the comparator
-            Collections.sort(dataSet, myComparator);
-            //Finding a threshold for dividing based on sorted dataSet
-            ArrayList<Double> thresh_candidates = new ArrayList<Double>();
-            int last_class = -1;
-            //Looks for repeat classes and adds the appropriate threshold to a list of possible thresholds
-            for (ArrayList<Double> element : dataSet) {
-                if (element.get(element.size - 1) == last_class)
-                    thresh_candidates.add((element.get(i) + dataSet.get(i)) / 2);
-                else if (last_class == -1)
-                    last_class = element.get(i);
+            for(DataBinder instance : databinds) {
+                    
             }
-            /* Iterates through the list of possible thresholds and calculates their info gain, updating best_gain as
-             * fitting.
-             */
-            int left_size  = 0;
-            int right_size = 0;
-            Double gain = 0;
-            for (Double thresh_cand : thresh_candidates) {
-                //Calculates the info gain
-                for (ArrayList<Double> instance : dataSet) {
-                    if (instance.get(i) <= thresh_cand)
-                        left_size++;
-                    else
-                        right_size++;
-                }
-                gain = infoGain(left_size , right_size);
-                if (gain >= best_gain) {
-                    best_gain = infoGain(thresh_cand);
-                    best_attr = this.mTrainAttributes.get(i);
-                    best_thresh = thresh_cand;
-                }
+            for(DataBinder binder: databinds) {
+                sorted.add(sorted.size()-1, binder.getData());
             }
         }
-        this.attribute = best_attr;
-        //Split the dataSet at the threshhold
-        ArrayList<ArrayList<Double>> left_data = new ArrayList();
-        ArrayList<ArrayList<Double>> right_data = new ArrayList();
-        for (ArrayList<Double> instance : dataSet) {
-            if (instance.get(mTrainAttributes.indexOf(best_attr)) <= best_thresh)
-                left_data.add(instance);
-            else
-                right_data.add(instance);
-        }
-        //Set the fields of the node
-        this.threshold = best_thresh;
-        this.attribute = best_attr;
-        //Recursively build subtrees
-        if(left_data.isEmpty() && right_data.isEmpty()) {
-            return null;
-        }
-        if (!left_data.isEmpty())
-            current.left = buildTree(left_data);
-        if (!right_data.isEmpty())
-            current.right = buildTree(right_data);
-
+        return new DecTreeNode(-1, null, -1);
     }
 
     private Double infoGain(int left_size, int right_size) {
-        return (Math.log(left_size)/Math.log(2)) + (Math.log(right_size)/Math.log(2));
+        return (Math.log(left_size) / Math.log(2)) + (Math.log(right_size) / Math.log(2));
     }
 
     public int classify(List<Double> instance) {
