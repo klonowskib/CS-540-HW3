@@ -93,8 +93,9 @@ public class DecisionTreeImpl {
                     last = current_class;
                 }
 
-                for(double curr_t : pot_threshs){
-
+                int gain = 0;
+                for(double curr_t : pot_threshs) {
+                    
                 }
                 for (DataBinder binder : databinds) {
                     sorted.add(sorted.size() - 1, binder.getData());
