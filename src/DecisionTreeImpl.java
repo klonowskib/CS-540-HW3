@@ -94,6 +94,7 @@ public class DecisionTreeImpl {
                 }
                 */
                 last = -1;
+
                 ArrayList<Double> pot_threshs = new ArrayList<Double>();
                 double thresh;
                 for (DataBinder instance : databinds) {
@@ -107,27 +108,37 @@ public class DecisionTreeImpl {
                     last = current_class;
                 }
 
-                double gain = 0;
-                int left_size = 0;
-                int right_size = 0;
                 double bestAttrSplit = 0;
-                System.out.println("BOOM:" + pot_threshs.size());
+                //System.out.println("BOOM:" + pot_threshs.size());
                 for (double curr_t : pot_threshs) {
+                    double gain = 0;
+                    int left_side = 0;
+                    int right_side = 0;
+                    int l_one = 0;
+                    int r_one = 0;
                     for (ArrayList<Double> instance : dataSet) {
-                        if (instance.get(i) <= curr_t)
-                            left_size++;
-                        else
-                            right_size++;
+
+                        if (instance.get(i) <= curr_t) {
+                            left_side++;
+                            if(instance.get(instance.size()-1) == 1) l_one++;
+                        }
+                        else {
+                            right_side++;
+                            if(instance.get(instance.size()-1) == 1) r_one++;
+                        }
+
                     }
-                    gain = calculateEntropy(left_size, right_size, zeros, ones);
+                    gain = calculateEntropy(left_side, right_side, zeros, ones, l_one, r_one);
                     //System.out.println("gain: "+ gain);
                     if (gain >= best_gain) {
                         best_gain = gain;
                         best_attr = mTrainAttributes.get(i);
                         best_thresh = curr_t;
                     }
-                    if (gain >= bestAttrSplit) {
+                    if (gain <= bestAttrSplit) {
+
                         bestAttrSplit = gain;
+
                     }
                 }
                 bestSplitPointList[i][0] = bestAttrSplit;
@@ -143,16 +154,51 @@ public class DecisionTreeImpl {
         return new DecTreeNode(-1, null, -1);
     }
 
-    private Double calculateEntropy(int left_size, int right_size, int zeros, int ones) {
-
+    private Double calculateEntropy(int left_size, int right_size, int zeros, int ones, int l_one, int r_one) {
 
         int total_size = left_size + right_size;
         //System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
-
         double p_zero = ((double)zeros/(double) total_size);
         double p_one = (double)ones/(double)total_size;
+        //prob instances is on left side
+        double p_left = ((double)left_size/total_size);
+        //prob instances is on right side
+        double p_right = ((double)right_size/total_size);
+        //prob instances is on left side and class zero
+        double p_lz = (left_size-l_one)/(double)left_size;
+        //prob instances is on right side and class zero
+        double p_rz = (right_size-r_one)/(double)right_size;
+        //prob instances is on left side and class one
+        double p_lo = (l_one)/(double)left_size;
+        //prob instances is on right side and class one
+        double p_ro = (r_one)/(double)right_size;
         //System.out.println("P_zero: " + p_zero + " p_one: " + p_one);
-        double entropy = (-p_zero)*(Math.log(p_zero)/Math.log(2)) + (-p_one/total_size)*(Math.log(p_one)/Math.log(2));
+        double entropy = (-p_zero*(Math.log(p_zero)/Math.log(2))) + (-p_one*(Math.log(p_one)/Math.log(p_one)));
+
+        double sce_l = -(p_lz)*(Math.log(p_lz)/Math.log(2)) + -(p_lo)*(Math.log(p_lo)/Math.log(2));
+
+        double sce_r = -(p_rz)*(Math.log(p_rz)/Math.log(2)) + -(p_ro)*(Math.log(p_ro)/Math.log(2));
+
+        double c_ent = (p_left)*sce_l + (p_right)*sce_r;
+
+        /*
+        entropy = (-p_zero)*(Math.log(p_zero)/Math.log(2)) + (-p_one)*(Math.log(p_one)/Math.log(2));
+        //probability class=0 given attribute is less than threshold
+
+        double cond_zero = (left_size/(double)total_size)*((double)(left_size-l_one)/left_size);
+        //System.out.println("Cond_Zero:" + cond_zero);
+        double cond_one = (left_size/(double)total_size)*((double)(l_one)/left_size);
+
+        double condit_entropy =
+                (-cond_zero*(Math.log(cond_zero)/Math.log(2)))+ (-cond_one*(Math.log(cond_one)/Math.log(2)));
+
+        condit_entropy -= entropy;
+        // (left_size/total_size)*condit_entropy + (right_size/total_size)*condit_entropy;
+        entropy = ent - c_ent;
+        //System.out.println(entropy);
+        */
+        entropy = entropy - c_ent ;
+
         return entropy;
     }
 
