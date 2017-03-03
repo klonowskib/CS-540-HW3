@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Fill in the implementation details of the class DecisionTree using this file. Any methods or
@@ -64,48 +61,51 @@ public class DecisionTreeImpl {
             if (type == 1) ones++;
             else if (type == 0) zeros++;
         }
-        // System.out.println("Ones: " + ones + " zeros: " +zeros);
         if (classified) {
             node.classLabel = last;
         } else {
             //Sort by attribute
-            ArrayList<DataBinder> databinds = new ArrayList<DataBinder>();
+            ArrayList<DataBinder> databinds = new ArrayList<>();
             for (ArrayList<Double> example : dataSet) {
                 for (int i = 0; i < example.size(); i++) {
                     databinds.add(new DataBinder(i, example));
                 }
             }
-            ArrayList<ArrayList<Double>> sorted = new ArrayList<ArrayList<Double>>();
+
             for (int i = 0; i < mTrainAttributes.size(); i++) {
-                Comparator<DataBinder> myComparator = new Comparator<DataBinder>() {
-                    @Override
-                    public int compare(DataBinder t1, DataBinder t2) {
-                        Double t1_class = t1.getData().get(t1.getData().size() - 1);
-                        Double t2_class = t2.getData().get(t2.getData().size() - 1);
-                        if (t1.getArgItem() == t2.getArgItem())
-                            return t1_class.compareTo(t2_class);
-                        else
-                            return t1.getArgItem().compareTo(t2.getArgItem());
-                    }
+                //pot_threshs = new ArrayList<Double>();
+                Comparator<DataBinder> myComparator = (DataBinder t1, DataBinder t2) -> {
+                    Double t1_class = t1.getData().get(t1.getData().size() - 1);
+                    Double t2_class = t2.getData().get(t2.getData().size() - 1);
+                    if (Objects.equals(t1.getArgItem(), t2.getArgItem())) {
+                        return t1_class.compareTo(t2_class);
+                    } else
+                        return t1.getArgItem().compareTo(t2.getArgItem());
                 };
-                Collections.sort(databinds, myComparator);
-                last = -1;
-                ArrayList<Double> pot_threshs = new ArrayList<Double>();
+                databinds.sort(myComparator);
+
+                ArrayList<Double> pot_threshs = new ArrayList<>();
+                int lastClass = 0;
+                //System.out.println(lastClass);
                 double thresh;
+                double lastVal = databinds.get(0).getArgItem();
                 for (DataBinder instance : databinds) {
                     ArrayList<Double> current = instance.getData();
                     int current_class = current.get(current.size() - 1).intValue();
-                    if (current_class != last) {
-                        thresh = current.get(i);
 
-                        pot_threshs.add(thresh);
+                    if (current_class != lastClass) {
+                        thresh = current.get(i) + lastVal / 2;
+                        if (!pot_threshs.contains(thresh)) {
+                            pot_threshs.add(thresh);
+                        }
                     }
-                    last = current_class;
+                    lastClass = current_class;
+                    lastVal = current.get(i);
                 }
                 double bestAttrSplit = 0;
                 //System.out.println("BOOM:" + pot_threshs.size());
                 for (double curr_t : pot_threshs) {
-                    double gain = 0;
+                    double gain;
                     int left_size = 0;
                     int right_size = 0;
                     int l_one = 0;
@@ -137,8 +137,8 @@ public class DecisionTreeImpl {
                 node.attribute = best_attr;
                 //System.out.println(best_attr);
                 node.threshold = best_thresh;
-                ArrayList<ArrayList<Double>> left_data = new ArrayList<ArrayList<Double>>();
-                ArrayList<ArrayList<Double>> right_data = new ArrayList<ArrayList<Double>>();
+                ArrayList<ArrayList<Double>> left_data = new ArrayList<>();
+                ArrayList<ArrayList<Double>> right_data = new ArrayList<>();
 
                 for (ArrayList<Double> instance : dataSet) {
                     if (instance.get(i) <= best_thresh) {
@@ -146,11 +146,11 @@ public class DecisionTreeImpl {
                     } else
                         right_data.add(instance);
                 }
-                if (right_data.size() <= minLeafNumber) {
+                if (right_data.isEmpty()) {
                     node.classLabel = majority(right_data);
                     return node;
                 }
-                if (left_data.size() <= minLeafNumber) {
+                if (left_data.isEmpty()) {
                     node.classLabel = majority(left_data);
                     return node;
                 } else {
@@ -164,24 +164,34 @@ public class DecisionTreeImpl {
     }
 
     private Double calculateEntropy(int left_size, int right_size, int zeros, int ones, int l_one, int r_one) {
-
-        int total_size = left_size + right_size;
-        // System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
+        double total_size = (double) left_size + (double) right_size;
+        //System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
         //System.out.println(mTrainDataSet.size());
-        double p_zero = ((double) zeros / (double) total_size);
-        double p_one = (double) ones / (double) total_size;
+        if (left_size == 0 || right_size == 0)
+            return -100.0;
+        double p_zero = ((double) zeros / total_size);
+        double p_one = (double) ones / total_size;
+
+        if (p_one == 1 || p_zero == 1)
+            return -100.0;
+
         //prob instances is on left side
         double p_left = ((double) left_size / total_size);
         //prob instances is on right side
         double p_right = ((double) right_size / total_size);
+
         //prob instances is on left side and class zero
-        double p_lz = (left_size - l_one) / (double) left_size;
+        double p_lz = (double) (left_size - l_one) / (double) left_size;
         //prob instances is on right side and class zero
-        double p_rz = (right_size - r_one) / (double) right_size;
+        double p_rz = (double) (right_size - r_one) / (double) right_size;
         //prob instances is on left side and class one
-        double p_lo = (l_one) / (double) left_size;
+        double p_lo = (double) (l_one) / (double) left_size;
         //prob instances is on right side and class one
-        double p_ro = (r_one) / (double) right_size;
+        double p_ro = (double) (r_one) / (double) right_size;
+
+        if (p_lo == 0 || p_lz == 0 || p_rz == 0 || p_ro == 0)
+            return -100.0;
+
         //System.out.println("P_zero: " + p_zero + " p_one: " + p_one);
         double entropy = (-p_zero * (Math.log(p_zero) / Math.log(2))) + (-p_one * (Math.log(p_one) / Math.log(2)));
         //System.out.println(entropy);
@@ -208,20 +218,24 @@ public class DecisionTreeImpl {
         //System.out.println(entropy);
         */
         entropy = entropy - c_ent;
-
         return entropy;
     }
-    public int majority (ArrayList<ArrayList<Double>> data) {
+
+    private int majority(ArrayList<ArrayList<Double>> data) {
         int majority = 0;
         int ones = 0;
         int zeros = 0;
-        for(ArrayList<Double> instance : data) {
-            if(instance.get(instance.size()-1) == 1) { ones++; }
-            else{ zeros++; }
+        for (ArrayList<Double> instance : data) {
+            if (instance.get(instance.size() - 1) == 1) {
+                ones++;
+            } else {
+                zeros++;
+            }
         }
         if (ones >= zeros) majority = 1;
         return majority;
     }
+
     public int classify(List<Double> instance) {
         DecTreeNode current = this.root;
         while (!current.isLeaf()) {
