@@ -46,6 +46,7 @@ public class DecisionTreeImpl {
 
     private DecTreeNode buildTree(ArrayList<ArrayList<Double>> dataSet) {
         // TODO: add code here
+        DecTreeNode node = new DecTreeNode(-1, "", -1);
         double best_thresh = -1;
         double best_gain = -1;
         String best_attr = "";
@@ -55,17 +56,17 @@ public class DecisionTreeImpl {
         int ones = 0;
         int zeros = 0;
         for (ArrayList<Double> inst : dataSet) {
-            int type = inst.get(inst.size()-1).intValue();
+            int type = inst.get(inst.size() - 1).intValue();
             if (type == last || last == -1) {
                 last = inst.get(inst.size() - 1).intValue();
             } else
                 classified = false;
             if (type == 1) ones++;
-            else if(type == 0) zeros++;
+            else if (type == 0) zeros++;
         }
-        System.out.println("Ones: " + ones + " zeros: " +zeros);
+        // System.out.println("Ones: " + ones + " zeros: " +zeros);
         if (classified) {
-            return new DecTreeNode(last, null, -1);
+            node.classLabel = last;
         } else {
             //Sort by attribute
             ArrayList<DataBinder> databinds = new ArrayList<DataBinder>();
@@ -88,13 +89,7 @@ public class DecisionTreeImpl {
                     }
                 };
                 Collections.sort(databinds, myComparator);
-/*
-                for(DataBinder bind : databinds) {
-                    System.out.println(bind.getArgItem());
-                }
-                */
                 last = -1;
-
                 ArrayList<Double> pot_threshs = new ArrayList<Double>();
                 double thresh;
                 for (DataBinder instance : databinds) {
@@ -107,27 +102,29 @@ public class DecisionTreeImpl {
                     }
                     last = current_class;
                 }
-
                 double bestAttrSplit = 0;
                 //System.out.println("BOOM:" + pot_threshs.size());
                 for (double curr_t : pot_threshs) {
                     double gain = 0;
-                    int left_side = 0;
-                    int right_side = 0;
+                    int left_size = 0;
+                    int right_size = 0;
                     int l_one = 0;
                     int r_one = 0;
                     for (ArrayList<Double> instance : dataSet) {
                         if (instance.get(i) <= curr_t) {
-                            left_side++;
-                            if(instance.get(instance.size()-1) == 1) {l_one++;}
-                        }
-                        else {
-                            right_side++;
-                            if(instance.get(instance.size()-1) == 1) {r_one++;}
+                            left_size++;
+                            if (instance.get(instance.size() - 1) == 1) {
+                                l_one++;
+                            }
+                        } else {
+                            right_size++;
+                            if (instance.get(instance.size() - 1) == 1) {
+                                r_one++;
+                            }
                         }
                     }
-                    gain = calculateEntropy(left_side, right_side, zeros, ones, l_one, r_one);
-                    System.out.println("gain: "+ gain);
+                    gain = calculateEntropy(left_size, right_size, zeros, ones, l_one, r_one);
+                    //System.out.println("gain: "+ gain);
                     if (gain >= best_gain) {
                         best_gain = gain;
                         best_attr = mTrainAttributes.get(i);
@@ -137,46 +134,62 @@ public class DecisionTreeImpl {
                         bestAttrSplit = gain;
                     }
                 }
-                bestSplitPointList[i][0] = bestAttrSplit;
+                node.attribute = best_attr;
+                //System.out.println(best_attr);
+                node.threshold = best_thresh;
+                ArrayList<ArrayList<Double>> left_data = new ArrayList<ArrayList<Double>>();
+                ArrayList<ArrayList<Double>> right_data = new ArrayList<ArrayList<Double>>();
 
-                /*
-                for (DataBinder binder : databinds) {
-                    sorted.add(sorted.size() - 1, binder.getData());
+                for (ArrayList<Double> instance : dataSet) {
+                    if (instance.get(i) <= best_thresh) {
+                        left_data.add(instance);
+                    } else
+                        right_data.add(instance);
                 }
-                */
-
+                if (right_data.size() <= minLeafNumber) {
+                    node.classLabel = majority(right_data);
+                    return node;
+                }
+                if (left_data.size() <= minLeafNumber) {
+                    node.classLabel = majority(left_data);
+                    return node;
+                } else {
+                    node.left = buildTree(left_data);
+                    node.right = buildTree(right_data);
+                }
+                bestSplitPointList[i][0] = bestAttrSplit;
             }
         }
-        return new DecTreeNode(-1, null, -1);
+        return node;
     }
 
     private Double calculateEntropy(int left_size, int right_size, int zeros, int ones, int l_one, int r_one) {
 
         int total_size = left_size + right_size;
-        System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
+        // System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
         //System.out.println(mTrainDataSet.size());
-        double p_zero = ((double)zeros/(double) total_size);
-        double p_one = (double)ones/(double)total_size;
+        double p_zero = ((double) zeros / (double) total_size);
+        double p_one = (double) ones / (double) total_size;
         //prob instances is on left side
-        double p_left = ((double)left_size/total_size);
+        double p_left = ((double) left_size / total_size);
         //prob instances is on right side
-        double p_right = ((double)right_size/total_size);
+        double p_right = ((double) right_size / total_size);
         //prob instances is on left side and class zero
-        double p_lz = (left_size-l_one)/(double)left_size;
+        double p_lz = (left_size - l_one) / (double) left_size;
         //prob instances is on right side and class zero
-        double p_rz = (right_size-r_one)/(double)right_size;
+        double p_rz = (right_size - r_one) / (double) right_size;
         //prob instances is on left side and class one
-        double p_lo = (l_one)/(double)left_size;
+        double p_lo = (l_one) / (double) left_size;
         //prob instances is on right side and class one
-        double p_ro = (r_one)/(double)right_size;
-        System.out.println("P_zero: " + p_zero + " p_one: " + p_one);
-        double entropy = (-p_zero*(Math.log(p_zero)/Math.log(2))) + (-p_one*(Math.log(p_one)/Math.log(2)));
-        System.out.println(entropy);
-        double sce_l = -(p_lz)*(Math.log(p_lz)/Math.log(2)) + -(p_lo)*(Math.log(p_lo)/Math.log(2));
+        double p_ro = (r_one) / (double) right_size;
+        //System.out.println("P_zero: " + p_zero + " p_one: " + p_one);
+        double entropy = (-p_zero * (Math.log(p_zero) / Math.log(2))) + (-p_one * (Math.log(p_one) / Math.log(2)));
+        //System.out.println(entropy);
+        double sce_l = -(p_lz) * (Math.log(p_lz) / Math.log(2)) + -(p_lo) * (Math.log(p_lo) / Math.log(2));
 
-        double sce_r = -(p_rz)*(Math.log(p_rz)/Math.log(2)) + -(p_ro)*(Math.log(p_ro)/Math.log(2));
+        double sce_r = -(p_rz) * (Math.log(p_rz) / Math.log(2)) + -(p_ro) * (Math.log(p_ro) / Math.log(2));
 
-        double c_ent = (p_left)*sce_l + (p_right)*sce_r;
+        double c_ent = (p_left) * sce_l + (p_right) * sce_r;
 
         /*
         entropy = (-p_zero)*(Math.log(p_zero)/Math.log(2)) + (-p_one)*(Math.log(p_one)/Math.log(2));
@@ -198,7 +211,17 @@ public class DecisionTreeImpl {
 
         return entropy;
     }
-
+    public int majority (ArrayList<ArrayList<Double>> data) {
+        int majority = 0;
+        int ones = 0;
+        int zeros = 0;
+        for(ArrayList<Double> instance : data) {
+            if(instance.get(instance.size()-1) == 1) { ones++; }
+            else{ zeros++; }
+        }
+        if (ones >= zeros) majority = 1;
+        return majority;
+    }
     public int classify(List<Double> instance) {
         DecTreeNode current = this.root;
         while (!current.isLeaf()) {
