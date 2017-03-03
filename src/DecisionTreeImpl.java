@@ -117,28 +117,24 @@ public class DecisionTreeImpl {
                     int l_one = 0;
                     int r_one = 0;
                     for (ArrayList<Double> instance : dataSet) {
-
                         if (instance.get(i) <= curr_t) {
                             left_side++;
-                            if(instance.get(instance.size()-1) == 1) l_one++;
+                            if(instance.get(instance.size()-1) == 1) {l_one++;}
                         }
                         else {
                             right_side++;
-                            if(instance.get(instance.size()-1) == 1) r_one++;
+                            if(instance.get(instance.size()-1) == 1) {r_one++;}
                         }
-
                     }
                     gain = calculateEntropy(left_side, right_side, zeros, ones, l_one, r_one);
-                    //System.out.println("gain: "+ gain);
+                    System.out.println("gain: "+ gain);
                     if (gain >= best_gain) {
                         best_gain = gain;
                         best_attr = mTrainAttributes.get(i);
                         best_thresh = curr_t;
                     }
-                    if (gain <= bestAttrSplit) {
-
+                    if (gain >= bestAttrSplit) {
                         bestAttrSplit = gain;
-
                     }
                 }
                 bestSplitPointList[i][0] = bestAttrSplit;
@@ -157,7 +153,8 @@ public class DecisionTreeImpl {
     private Double calculateEntropy(int left_size, int right_size, int zeros, int ones, int l_one, int r_one) {
 
         int total_size = left_size + right_size;
-        //System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
+        System.out.println("Ones: " + ones + " zeros: " +zeros + " total " + total_size + " left " + left_size + " right " + right_size);
+        //System.out.println(mTrainDataSet.size());
         double p_zero = ((double)zeros/(double) total_size);
         double p_one = (double)ones/(double)total_size;
         //prob instances is on left side
@@ -172,9 +169,9 @@ public class DecisionTreeImpl {
         double p_lo = (l_one)/(double)left_size;
         //prob instances is on right side and class one
         double p_ro = (r_one)/(double)right_size;
-        //System.out.println("P_zero: " + p_zero + " p_one: " + p_one);
-        double entropy = (-p_zero*(Math.log(p_zero)/Math.log(2))) + (-p_one*(Math.log(p_one)/Math.log(p_one)));
-
+        System.out.println("P_zero: " + p_zero + " p_one: " + p_one);
+        double entropy = (-p_zero*(Math.log(p_zero)/Math.log(2))) + (-p_one*(Math.log(p_one)/Math.log(2)));
+        System.out.println(entropy);
         double sce_l = -(p_lz)*(Math.log(p_lz)/Math.log(2)) + -(p_lo)*(Math.log(p_lo)/Math.log(2));
 
         double sce_r = -(p_rz)*(Math.log(p_rz)/Math.log(2)) + -(p_ro)*(Math.log(p_ro)/Math.log(2));
@@ -197,7 +194,7 @@ public class DecisionTreeImpl {
         entropy = ent - c_ent;
         //System.out.println(entropy);
         */
-        entropy = entropy - c_ent ;
+        entropy = entropy - c_ent;
 
         return entropy;
     }
