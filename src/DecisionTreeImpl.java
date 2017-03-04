@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Fill in the implementation details of the class DecisionTree using this file. Any methods or
@@ -74,27 +71,44 @@ public class DecisionTreeImpl {
         int i = 0;
         for (String attribute : mTrainAttributes) {
             //Array of dataBinders to be sorted
-            double AAAAA = bestSplitPointList[8][0];
             ArrayList<DataBinder> databinds = new ArrayList<>();
             for (ArrayList<Double> example : dataSet) {
-                databinds.add(new DataBinder(i, example));
+                databinds.add(new DataBinder(mTrainAttributes.indexOf(attribute), example));
             }
-            Comparator<DataBinder> myComparator = new Comparator<DataBinder>() {
+            //Not sorting correctly for multiple ties
+            Comparator<DataBinder> myClassComparator = new Comparator<DataBinder>() {
                 @Override
                 public int compare(DataBinder t1, DataBinder t2) {
                     Double t1_class = t1.getData().get(t1.getData().size() - 1);
                     Double t2_class = t2.getData().get(t2.getData().size() - 1);
-                    if (t1.getArgItem() == t2.getArgItem())
-                        return t1_class.compareTo(t2_class);
-                    else
-                        return t1.getArgItem().compareTo(t2.getArgItem());
+                    return t1_class.compareTo(t2_class);
                 }
             };
-            Collections.sort(databinds, myComparator);
+            Collections.sort(databinds, myClassComparator);
+            Comparator<DataBinder> myAttributeComparator = new Comparator<DataBinder>() {
+                @Override
+                public int compare(DataBinder t1, DataBinder t2) {
+                    Double t1_class = t1.getData().get(t1.getData().size() - 1);
+                    Double t2_class = t2.getData().get(t2.getData().size() - 1);
+
+                    return t1.getArgItem().compareTo(t2.getArgItem());
+                }
+            };
+            Collections.sort(databinds, myAttributeComparator);
+
+
             int last = databinds.get(0).getData().get(databinds.get(0).getData().size() - 1).intValue();
             double lastVal = databinds.get(0).getArgItem();
             ArrayList<Double> thresholds = getThresholds(databinds, attribute);
             double bestAttrSplit = 0;
+            ArrayList<Double[]> look = new ArrayList<>();
+            int j = 0;
+            for (DataBinder bind : databinds) {
+                Double[] tmp = new Double[2];
+                tmp[0] = bind.getArgItem();
+                tmp[1] = bind.getData().get(bind.getData().size() - 1);
+                look.add(tmp);
+            }
             for (double current : thresholds) {
                 int left_size = 0;
                 int right_size = 0;
@@ -119,13 +133,9 @@ public class DecisionTreeImpl {
                     best_gain = gain;
                     bestAttribute = mTrainAttributes.get(i);
                     best_thresh = current;
-                    }
+                }
                 if (bestSplitPointList[i][0] < gain && level == 0) {
                     bestSplitPointList[i][0] = gain;
-                }
-                if(attribute.equals("A9")){
-                    AAAAA = gain;
-                            System.out.println("butt");
                 }
             }
             bestSplitPointList[i][1] = best_thresh;
@@ -220,11 +230,11 @@ public class DecisionTreeImpl {
 
     public int classify(List<Double> instance) {
         DecTreeNode current = this.root;
-        while (!current.isLeaf()) {
-            int attr = instance.get(mTrainAttributes.indexOf(current.attribute)).intValue();
-            if (attr <= current.threshold && current.left != null)
+        while(!current.isLeaf()) {
+            if(instance.get(mTrainAttributes.indexOf(current.attribute)) <= current.threshold) {
                 current = current.left;
-            else if (current.right != null)
+            }
+            else
                 current = current.right;
         }
         return current.classLabel;

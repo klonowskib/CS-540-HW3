@@ -52,11 +52,10 @@ public class HW3 {
 		}else if(mode == 2){
 			int equal = 0;
 			for(ArrayList<Double> instance: mTrainDataSet) {
-				int clas = mTree.classify(instance);
-				if(clas == instance.get(instance.size()-1))
+				int classification = mTree.classify(instance);
+				if(classification == instance.get(instance.size()-1))
 					equal++;
-				System.out.println(clas);
-
+				System.out.println(classification);
 			}
 			mTree.printAccuracy(equal, mTrainDataSet.size());
 		}else if(mode == 3){
