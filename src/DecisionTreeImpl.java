@@ -238,6 +238,8 @@ public class DecisionTreeImpl {
                 current = current.right;
         }
         return current.classLabel;
+
+        
     }
 
     private int majority(ArrayList<ArrayList<Double>> data) {
