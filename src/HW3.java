@@ -50,9 +50,25 @@ public class HW3 {
 		}else if(mode == 1){
 			mTree.print();
 		}else if(mode == 2){
-			//TODO: add code here.
+			int equal = 0;
+			for(ArrayList<Double> instance: mTrainDataSet) {
+				int clas = mTree.classify(instance);
+				if(clas == instance.get(instance.size()-1))
+					equal++;
+				System.out.println(clas);
+
+			}
+			mTree.printAccuracy(equal, mTrainDataSet.size());
 		}else if(mode == 3){
-			//TODO: add code here.
+			int equal = 0;
+			for(ArrayList<Double> instance: mTestDataSet) {
+				int clas = mTree.classify(instance);
+				if(clas == instance.get(instance.size()-1))
+					equal++;
+				System.out.println(clas);
+
+			}
+			mTree.printAccuracy(equal, mTestDataSet.size());
 		}else{
 			System.out.println("Invalid mode passed as argument.");
 		}

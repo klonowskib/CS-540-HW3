@@ -13,6 +13,7 @@ import java.util.List;
  * See DecisionTree for a description of default methods.
  */
 public class DecisionTreeImpl {
+    private int level = 0;
     private DecTreeNode root;
     //ordered list of attributes
     private List<String> mTrainAttributes;
@@ -42,7 +43,6 @@ public class DecisionTreeImpl {
         this.mTrainDataSet = trainDataSet;
         this.minLeafNumber = minLeafNumber;
         this.root = buildTree(this.mTrainDataSet);
-
     }
 
     private DecTreeNode buildTree(ArrayList<ArrayList<Double>> dataSet) {
@@ -50,9 +50,7 @@ public class DecisionTreeImpl {
         DecTreeNode node = new DecTreeNode(1, "", 0);
         if (dataSet.isEmpty()) {
             return node;
-        }
-
-        else if (dataSet.size() <= minLeafNumber) {
+        } else if (dataSet.size() <= minLeafNumber) {
             node.classLabel = majority(dataSet);
             //System.out.println(node.classLabel);
             return node;
@@ -71,15 +69,13 @@ public class DecisionTreeImpl {
             node.classLabel = last_class;
             return node;
         }
-        String bestAttribute = getBestAttribute(dataSet);
         double best_thresh = -1;
         double best_gain = -1;
-
         int i = 0;
         for (String attribute : mTrainAttributes) {
             //Array of dataBinders to be sorted
+            double AAAAA = bestSplitPointList[8][0];
             ArrayList<DataBinder> databinds = new ArrayList<>();
-
             for (ArrayList<Double> example : dataSet) {
                 databinds.add(new DataBinder(i, example));
             }
@@ -94,11 +90,10 @@ public class DecisionTreeImpl {
                         return t1.getArgItem().compareTo(t2.getArgItem());
                 }
             };
-
             Collections.sort(databinds, myComparator);
             int last = databinds.get(0).getData().get(databinds.get(0).getData().size() - 1).intValue();
             double lastVal = databinds.get(0).getArgItem();
-            ArrayList<Double> thresholds = getThresholds(databinds);
+            ArrayList<Double> thresholds = getThresholds(databinds, attribute);
             double bestAttrSplit = 0;
             for (double current : thresholds) {
                 int left_size = 0;
@@ -118,25 +113,26 @@ public class DecisionTreeImpl {
                         }
                     }
                 }
+
                 double gain = calculateEntropy(left_size, right_size, zeros, ones, l_one, r_one);
                 if (gain >= best_gain) {
                     best_gain = gain;
                     bestAttribute = mTrainAttributes.get(i);
                     best_thresh = current;
-                }
-                if (bestSplitPointList[i][0] < gain) {
+                    }
+                if (bestSplitPointList[i][0] < gain && level == 0) {
                     bestSplitPointList[i][0] = gain;
                 }
-                if(bestSplitPointList[i][0] == 0.079168)
+                if(attribute.equals("A9")){
+                    AAAAA = gain;
+                            System.out.println("butt");
+                }
             }
-            //bestSplitPointList[i][0] = bestAttrSplit;
             bestSplitPointList[i][1] = best_thresh;
             i++;
         }
-
         node.threshold = best_thresh;
         node.attribute = bestAttribute;
-
         ArrayList<ArrayList<Double>> left_data = new ArrayList<>();
         ArrayList<ArrayList<Double>> right_data = new ArrayList<>();
         for (ArrayList<Double> instance : dataSet) {
@@ -145,28 +141,16 @@ public class DecisionTreeImpl {
             } else
                 right_data.add(instance);
         }
-
-        //System.out.println("recurse");
-        //System.out.println("left data size: " + left_data.size() + " gain: " + best_gain + " attribute: " + node.attribute);
+        this.level++;
         node.left = buildTree(left_data);
-        //System.out.println("right data size: " + right_data.size());
         node.right = buildTree(right_data);
-        //System.out.println("method exit");
-        //printTreeNode(" ", node);
+        this.level--;
         return node;
 
     }
 
-    private String getBestAttribute(ArrayList<ArrayList<Double>> data) {
-        String attribute = "";
-
-        ArrayList<Double> thresholds = null;
-        return attribute;
-    }
-
-    private ArrayList<Double> getThresholds(ArrayList<DataBinder> data) {
+    private ArrayList<Double> getThresholds(ArrayList<DataBinder> data, String attribute) {
         ArrayList<Double> thresholds = new ArrayList<>();
-
         int prevClass = data.get(0).getData().get(data.get(0).getData().size() - 1).intValue();
         double prevVal = data.get(0).getArgItem();
         for (DataBinder current : data) {
@@ -183,7 +167,6 @@ public class DecisionTreeImpl {
     }
 
     private Double calculateEntropy(int left_size, int right_size, int zeros, int ones, int l_one, int r_one) {
-
         int total_size = left_size + right_size;
         double entropy = 0;
         double p_zero = ((double) zeros / (double) total_size);
@@ -207,8 +190,7 @@ public class DecisionTreeImpl {
             entropy = (-p_zero * (Math.log(p_zero) / Math.log(2)));
         } else if (p_one != 0) {
             entropy = (-p_one * (Math.log(p_one) / Math.log(2)));
-        } else return 0.0;
-
+        }
 
         double sce_l = 0;
 
@@ -218,8 +200,7 @@ public class DecisionTreeImpl {
             sce_l = -(p_lo) * (Math.log(p_lo) / Math.log(2));
         } else if (p_lz != 0) {
             sce_l = -(p_lz) * (Math.log(p_lz) / Math.log(2));
-        } else
-            return 0.0;
+        }
 
 
         double sce_r = 0;
@@ -229,23 +210,10 @@ public class DecisionTreeImpl {
             sce_r = -(p_ro) * (Math.log(p_ro) / Math.log(2));
         } else if (p_rz != 0) {
             sce_r = -(p_rz) * (Math.log(p_rz) / Math.log(2));
-        } else return 0.0;
+        }
 
 
         double c_ent = (p_left) * sce_l + (p_right) * sce_r;
-        /*
-        entropy = (-p_zero)*(Math.log(p_zero)/Math.log(2)) + (-p_one)*(Math.log(p_one)/Math.log(2));
-        //probability class=0 given attribute is less than threshold
-        double cond_zero = (left_size/(double)total_size)*((double)(left_size-l_one)/left_size);
-        //System.out.println("Cond_Zero:" + cond_zero);
-        double cond_one = (left_size/(double)total_size)*((double)(l_one)/left_size);
-        double condit_entropy =
-                (-cond_zero*(Math.log(cond_zero)/Math.log(2)))+ (-cond_one*(Math.log(cond_one)/Math.log(2)));
-        condit_entropy -= entropy;
-        // (left_size/total_size)*condit_entropy + (right_size/total_size)*condit_entropy;
-        entropy = ent - c_ent;
-        //System.out.println(entropy);
-        */
         entropy = entropy - c_ent;
         return entropy;
     }
@@ -284,7 +252,7 @@ public class DecisionTreeImpl {
 
         //TODO: modify this example print statement to work with your code to output attribute names and info gain. Note the %.6f output format.
         for (int i = 0; i < bestSplitPointList.length; i++) {
-            System.out.println(this.mTrainAttributes.get(i) + " " + String.format("%.6f", bestSplitPointList[i][0]));// + " thresh: " + bestSplitPointList[i][1] + " attribute " + bestAttribute);
+            System.out.println(this.mTrainAttributes.get(i) + " " + String.format("%.6f", bestSplitPointList[i][0])); // + " thresh: " + bestSplitPointList[i][1]);
         }
     }
 
