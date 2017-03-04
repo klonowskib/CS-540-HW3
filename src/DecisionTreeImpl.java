@@ -40,6 +40,7 @@ public class DecisionTreeImpl {
         this.mTrainDataSet = trainDataSet;
         this.minLeafNumber = minLeafNumber;
         this.root = buildTree(this.mTrainDataSet);
+        int classIndex = mTrainAttributes.size() - 1;
     }
 
     private DecTreeNode buildTree(ArrayList<ArrayList<Double>> dataSet) {
@@ -70,10 +71,11 @@ public class DecisionTreeImpl {
         double best_gain = -1;
         int i = 0;
         for (String attribute : mTrainAttributes) {
+            int attr_index = mTrainAttributes.indexOf(attribute);
             //Array of dataBinders to be sorted
             ArrayList<DataBinder> databinds = new ArrayList<>();
             for (ArrayList<Double> example : dataSet) {
-                databinds.add(new DataBinder(mTrainAttributes.indexOf(attribute), example));
+                databinds.add(new DataBinder(attr_index, example));
             }
             //Not sorting correctly for multiple ties
             Comparator<DataBinder> myClassComparator = new Comparator<DataBinder>() {
@@ -102,7 +104,6 @@ public class DecisionTreeImpl {
             ArrayList<Double> thresholds = getThresholds(databinds, attribute);
             double bestAttrSplit = 0;
             ArrayList<Double[]> look = new ArrayList<>();
-            int j = 0;
             for (DataBinder bind : databinds) {
                 Double[] tmp = new Double[2];
                 tmp[0] = bind.getArgItem();
@@ -127,11 +128,10 @@ public class DecisionTreeImpl {
                         }
                     }
                 }
-
                 double gain = calculateEntropy(left_size, right_size, zeros, ones, l_one, r_one);
                 if (gain >= best_gain) {
                     best_gain = gain;
-                    bestAttribute = mTrainAttributes.get(i);
+                    bestAttribute = attribute;
                     best_thresh = current;
                 }
                 if (bestSplitPointList[i][0] < gain && level == 0) {
