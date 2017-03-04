@@ -48,8 +48,11 @@ public class DecisionTreeImpl {
     private DecTreeNode buildTree(ArrayList<ArrayList<Double>> dataSet) {
         // TODO: add code here
         DecTreeNode node = new DecTreeNode(1, "", 0);
-        if (dataSet.isEmpty()) return node;
-        else if (dataSet.size() <= minLeafNumber || mTrainAttributes.isEmpty()) {
+        if (dataSet.isEmpty()) {
+            return node;
+        }
+
+        else if (dataSet.size() <= minLeafNumber) {
             node.classLabel = majority(dataSet);
             //System.out.println(node.classLabel);
             return node;
@@ -65,11 +68,10 @@ public class DecisionTreeImpl {
             if (current_class == 1) ones++;
         }
         if (match == 1) {
-            node.classLabel = match;
+            node.classLabel = last_class;
             return node;
         }
         String bestAttribute = getBestAttribute(dataSet);
-
         double best_thresh = -1;
         double best_gain = -1;
 
@@ -125,6 +127,7 @@ public class DecisionTreeImpl {
                 if (bestSplitPointList[i][0] < gain) {
                     bestSplitPointList[i][0] = gain;
                 }
+                if(bestSplitPointList[i][0] == 0.079168)
             }
             //bestSplitPointList[i][0] = bestAttrSplit;
             bestSplitPointList[i][1] = best_thresh;
@@ -137,7 +140,7 @@ public class DecisionTreeImpl {
         ArrayList<ArrayList<Double>> left_data = new ArrayList<>();
         ArrayList<ArrayList<Double>> right_data = new ArrayList<>();
         for (ArrayList<Double> instance : dataSet) {
-            if (instance.get(mTrainAttributes.indexOf(bestAttribute)) <= best_thresh) {
+            if (instance.get(mTrainAttributes.indexOf(bestAttribute)) < best_thresh) {
                 left_data.add(instance);
             } else
                 right_data.add(instance);
@@ -149,7 +152,9 @@ public class DecisionTreeImpl {
         //System.out.println("right data size: " + right_data.size());
         node.right = buildTree(right_data);
         //System.out.println("method exit");
+        //printTreeNode(" ", node);
         return node;
+
     }
 
     private String getBestAttribute(ArrayList<ArrayList<Double>> data) {
@@ -218,7 +223,6 @@ public class DecisionTreeImpl {
 
 
         double sce_r = 0;
-        if (p_ro == 0 || p_rz == 0) return 0.0;
         if (p_ro != 0 && p_rz != 0) {
             sce_r = -(p_rz) * (Math.log(p_rz) / Math.log(2)) + -(p_ro) * (Math.log(p_ro) / Math.log(2));
         } else if (p_ro != 0) {
@@ -266,7 +270,7 @@ public class DecisionTreeImpl {
             if (curr.get(curr.size() - 1) == 1) ones++;
             if (curr.get(curr.size() - 1) == 0) zeros++;
         }
-        if (ones <= zeros)
+        if (ones < zeros)
             return 0;
         else
             return 1;
