@@ -20,7 +20,7 @@ public class DecisionTreeImpl {
     private ArrayList<ArrayList<Double>> mTrainDataSet;
     //Min number of instances per leaf.
     private int minLeafNumber = 10;
-    private Double[][] bestSplitPointList;
+    private double[][] bestSplitPointList;
     private String bestAttribute;
 
     /**
@@ -38,7 +38,7 @@ public class DecisionTreeImpl {
      */
     DecisionTreeImpl(ArrayList<ArrayList<Double>> trainDataSet, ArrayList<String> trainAttributeNames, int minLeafNumber) {
         this.mTrainAttributes = trainAttributeNames;
-        this.bestSplitPointList = new Double[mTrainAttributes.size()][3];
+        this.bestSplitPointList = new double[mTrainAttributes.size()][3];
         this.mTrainDataSet = trainDataSet;
         this.minLeafNumber = minLeafNumber;
         this.root = buildTree(this.mTrainDataSet);
@@ -51,9 +51,9 @@ public class DecisionTreeImpl {
         if (dataSet.isEmpty()) return node;
         else if (dataSet.size() <= minLeafNumber || mTrainAttributes.isEmpty()) {
             node.classLabel = majority(dataSet);
+            //System.out.println(node.classLabel);
             return node;
         }
-
         int match = 1;
         int last_class = dataSet.get(0).get(dataSet.get(0).size() - 1).intValue();
         int ones = 0;
@@ -73,14 +73,14 @@ public class DecisionTreeImpl {
         double best_thresh = -1;
         double best_gain = -1;
 
-        //Sort by attribute
-        ArrayList<DataBinder> databinds = new ArrayList<>();
-        for (ArrayList<Double> example : dataSet) {
-            for (int i = 0; i < example.size(); i++) {
+        int i = 0;
+        for (String attribute : mTrainAttributes) {
+            //Array of dataBinders to be sorted
+            ArrayList<DataBinder> databinds = new ArrayList<>();
+
+            for (ArrayList<Double> example : dataSet) {
                 databinds.add(new DataBinder(i, example));
             }
-        }
-        for (int i = 0; i < mTrainAttributes.size(); i++) {
             Comparator<DataBinder> myComparator = new Comparator<DataBinder>() {
                 @Override
                 public int compare(DataBinder t1, DataBinder t2) {
@@ -92,15 +92,12 @@ public class DecisionTreeImpl {
                         return t1.getArgItem().compareTo(t2.getArgItem());
                 }
             };
+
             Collections.sort(databinds, myComparator);
-
-
-            int last = databinds.get(0).getData().get(databinds.get(0).getData().size()-1).intValue();
+            int last = databinds.get(0).getData().get(databinds.get(0).getData().size() - 1).intValue();
             double lastVal = databinds.get(0).getArgItem();
             ArrayList<Double> thresholds = getThresholds(databinds);
-
             double bestAttrSplit = 0;
-
             for (double current : thresholds) {
                 int left_size = 0;
                 int right_size = 0;
@@ -125,13 +122,13 @@ public class DecisionTreeImpl {
                     bestAttribute = mTrainAttributes.get(i);
                     best_thresh = current;
                 }
-                if (gain >= bestAttrSplit) {
-                    bestAttrSplit = gain;
+                if (bestSplitPointList[i][0] < gain) {
+                    bestSplitPointList[i][0] = gain;
                 }
-
             }
-            bestSplitPointList[i][0] = bestAttrSplit;
+            //bestSplitPointList[i][0] = bestAttrSplit;
             bestSplitPointList[i][1] = best_thresh;
+            i++;
         }
 
         node.threshold = best_thresh;
@@ -146,28 +143,33 @@ public class DecisionTreeImpl {
                 right_data.add(instance);
         }
 
-        // System.out.println("recurse");
-        System.out.println("left data size: " + left_data.size() + " gain: " + best_gain + " attribute: " + node.attribute);
+        //System.out.println("recurse");
+        //System.out.println("left data size: " + left_data.size() + " gain: " + best_gain + " attribute: " + node.attribute);
         node.left = buildTree(left_data);
-        System.out.println("right data size: " + right_data.size());
+        //System.out.println("right data size: " + right_data.size());
         node.right = buildTree(right_data);
-     //   System.out.println("method exit");
+        //System.out.println("method exit");
         return node;
     }
 
     private String getBestAttribute(ArrayList<ArrayList<Double>> data) {
         String attribute = "";
+
+        ArrayList<Double> thresholds = null;
         return attribute;
     }
 
-    private ArrayList<Double> getThresholds (ArrayList<DataBinder> data) {
+    private ArrayList<Double> getThresholds(ArrayList<DataBinder> data) {
         ArrayList<Double> thresholds = new ArrayList<>();
-        int prevClass = data.get(0).getData().get( data.get(0).getData().size()-1).intValue();
-        double prevVal =  data.get(0).getArgItem();
-        for(DataBinder current : data ) {
-            int currentClass = current.getData().get(current.getData().size()-1).intValue();
-            if(currentClass == prevClass) {
-                thresholds.add((current.getArgItem()+prevVal)/2);
+
+        int prevClass = data.get(0).getData().get(data.get(0).getData().size() - 1).intValue();
+        double prevVal = data.get(0).getArgItem();
+        for (DataBinder current : data) {
+            int currentClass = current.getData().get(current.getData().size() - 1).intValue();
+
+            double threshold = (current.getArgItem() + prevVal) / 2;
+            if (currentClass != prevClass && !thresholds.contains(threshold)) {
+                thresholds.add(threshold);
             }
             prevVal = current.getArgItem();
             prevClass = currentClass;
@@ -178,7 +180,7 @@ public class DecisionTreeImpl {
     private Double calculateEntropy(int left_size, int right_size, int zeros, int ones, int l_one, int r_one) {
 
         int total_size = left_size + right_size;
-
+        double entropy = 0;
         double p_zero = ((double) zeros / (double) total_size);
         double p_one = (double) ones / (double) total_size;
         //prob instances is on left side
@@ -194,35 +196,36 @@ public class DecisionTreeImpl {
         //prob instances is on right side and class one
         double p_ro = (double) (r_one) / (double) right_size;
 
-        double entropy = (-p_zero * (Math.log(p_zero) / Math.log(2))) + (-p_one * (Math.log(p_one) / Math.log(2)));
+        if (p_zero != 0 && p_one != 0) {
+            entropy = (-p_zero * (Math.log(p_zero) / Math.log(2))) + (-p_one * (Math.log(p_one) / Math.log(2)));
+        } else if (p_zero != 0) {
+            entropy = (-p_zero * (Math.log(p_zero) / Math.log(2)));
+        } else if (p_one != 0) {
+            entropy = (-p_one * (Math.log(p_one) / Math.log(2)));
+        } else return 0.0;
+
+
         double sce_l = 0;
 
         if (p_lo != 0 && p_lz != 0) {
             sce_l = -(p_lz) * (Math.log(p_lz) / Math.log(2)) + -(p_lo) * (Math.log(p_lo) / Math.log(2));
-        }
-        else if(p_lo != 0) {
+        } else if (p_lo != 0) {
             sce_l = -(p_lo) * (Math.log(p_lo) / Math.log(2));
-        }
-        else if(p_lz != 0) {
+        } else if (p_lz != 0) {
             sce_l = -(p_lz) * (Math.log(p_lz) / Math.log(2));
-        }
-        else
-            return -1.0;
+        } else
+            return 0.0;
 
 
         double sce_r = 0;
-        if(p_ro == 0 || p_rz == 0) return 0.0;
+        if (p_ro == 0 || p_rz == 0) return 0.0;
         if (p_ro != 0 && p_rz != 0) {
             sce_r = -(p_rz) * (Math.log(p_rz) / Math.log(2)) + -(p_ro) * (Math.log(p_ro) / Math.log(2));
-        }
-        else if(p_ro != 0) {
+        } else if (p_ro != 0) {
             sce_r = -(p_ro) * (Math.log(p_ro) / Math.log(2));
-        }
-        else if(p_rz != 0) {
+        } else if (p_rz != 0) {
             sce_r = -(p_rz) * (Math.log(p_rz) / Math.log(2));
-        }
-        else return -2.0;
-
+        } else return 0.0;
 
 
         double c_ent = (p_left) * sce_l + (p_right) * sce_r;
@@ -256,16 +259,17 @@ public class DecisionTreeImpl {
     }
 
     private int majority(ArrayList<ArrayList<Double>> data) {
+        int majority = -1;
         int ones = 0;
         int zeros = 0;
-        int majority = 1;
-
-        for (ArrayList<Double> instance : data) {
-            if (instance.get(instance.size() - 1) == 0) zeros++;
-            else ones++;
+        for (ArrayList<Double> curr : data) {
+            if (curr.get(curr.size() - 1) == 1) ones++;
+            if (curr.get(curr.size() - 1) == 0) zeros++;
         }
-        if (zeros > ones) majority = zeros;
-        return majority;
+        if (ones <= zeros)
+            return 0;
+        else
+            return 1;
     }
 
     public void rootInfoGain(ArrayList<ArrayList<Double>> dataSet, ArrayList<String> trainAttributeNames, int minLeafNumber) {
@@ -276,7 +280,7 @@ public class DecisionTreeImpl {
 
         //TODO: modify this example print statement to work with your code to output attribute names and info gain. Note the %.6f output format.
         for (int i = 0; i < bestSplitPointList.length; i++) {
-            System.out.println(this.mTrainAttributes.get(i) + " " + String.format("%.6f", bestSplitPointList[i][0]) + " thresh: " + bestSplitPointList[i][1] + " attribute " + bestAttribute);
+            System.out.println(this.mTrainAttributes.get(i) + " " + String.format("%.6f", bestSplitPointList[i][0]));// + " thresh: " + bestSplitPointList[i][1] + " attribute " + bestAttribute);
         }
     }
 
@@ -316,28 +320,28 @@ public class DecisionTreeImpl {
         return accuracy;
     }
 
-/**
- * Private class to facilitate instance sorting by argument position since java doesn't like passing variables to comparators through
- * nested variable scopes.
- */
-private class DataBinder {
+    /**
+     * Private class to facilitate instance sorting by argument position since java doesn't like passing variables to comparators through
+     * nested variable scopes.
+     */
+    private class DataBinder {
 
-    public ArrayList<Double> mData;
-    public int i;
+        public ArrayList<Double> mData;
+        public int i;
 
-    public DataBinder(int i, ArrayList<Double> mData) {
-        this.mData = mData;
-        this.i = i;
+        public DataBinder(int i, ArrayList<Double> mData) {
+            this.mData = mData;
+            this.i = i;
+        }
+
+        public Double getArgItem() {
+            return mData.get(i);
+        }
+
+        public ArrayList<Double> getData() {
+            return mData;
+        }
+
     }
-
-    public Double getArgItem() {
-        return mData.get(i);
-    }
-
-    public ArrayList<Double> getData() {
-        return mData;
-    }
-
-}
 
 }
