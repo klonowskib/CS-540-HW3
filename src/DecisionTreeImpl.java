@@ -20,7 +20,6 @@ public class DecisionTreeImpl {
     private int minLeafNumber = 10;
     private double[][] bestSplitPointList;
     private String bestAttribute;
-
     /**
      * Answers static questions about decision trees.
      */
@@ -40,7 +39,6 @@ public class DecisionTreeImpl {
         this.mTrainDataSet = trainDataSet;
         this.minLeafNumber = minLeafNumber;
         this.root = buildTree(this.mTrainDataSet);
-        int classIndex = mTrainAttributes.size() - 1;
     }
 
     private DecTreeNode buildTree(ArrayList<ArrayList<Double>> dataSet) {
@@ -50,7 +48,7 @@ public class DecisionTreeImpl {
             return node;
         } else if (dataSet.size() <= minLeafNumber) {
             node.classLabel = majority(dataSet);
-            //System.out.println(node.classLabel);
+
             return node;
         }
         int match = 1;
@@ -71,13 +69,14 @@ public class DecisionTreeImpl {
         double best_gain = -1;
         int i = 0;
         for (String attribute : mTrainAttributes) {
-            int attr_index = mTrainAttributes.indexOf(attribute);
+            int attributeIndex = mTrainAttributes.indexOf(attribute);
             //Array of dataBinders to be sorted
             ArrayList<DataBinder> databinds = new ArrayList<>();
             for (ArrayList<Double> example : dataSet) {
-                databinds.add(new DataBinder(attr_index, example));
+                databinds.add(new DataBinder(attributeIndex, example));
             }
-            //Not sorting correctly for multiple ties
+
+
             Comparator<DataBinder> myClassComparator = new Comparator<DataBinder>() {
                 @Override
                 public int compare(DataBinder t1, DataBinder t2) {
@@ -86,13 +85,11 @@ public class DecisionTreeImpl {
                     return t1_class.compareTo(t2_class);
                 }
             };
+
             Collections.sort(databinds, myClassComparator);
             Comparator<DataBinder> myAttributeComparator = new Comparator<DataBinder>() {
                 @Override
                 public int compare(DataBinder t1, DataBinder t2) {
-                    Double t1_class = t1.getData().get(t1.getData().size() - 1);
-                    Double t2_class = t2.getData().get(t2.getData().size() - 1);
-
                     return t1.getArgItem().compareTo(t2.getArgItem());
                 }
             };
@@ -238,6 +235,8 @@ public class DecisionTreeImpl {
                 current = current.right;
         }
         return current.classLabel;
+
+
     }
 
     private int majority(ArrayList<ArrayList<Double>> data) {
